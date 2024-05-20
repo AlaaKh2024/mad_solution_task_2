@@ -41,7 +41,7 @@ class ApiAuthController extends Controller
        $user->certificate_path = $request->certificate->store('certificates', 'public');
        $user->verification_code = Str::random(6);
        $user->save();
-       Mail::to($user->email)->send(new VerificationMail($user->verification_code));
+       
 
        return response()->json(['message' => 'User registered successfully! Please check your email for verification code.']);
    }
@@ -69,22 +69,26 @@ class ApiAuthController extends Controller
     }
     public function logout()
     {
-        Auth::user()->currentAccessToken()->delete();
+        Auth::user()->tokens()->delete();
         return response([
             'success' => true,
             'message'=>'goodbye...'
+            
+
         ]);
+        
     }
     
 
     public function refreshToken(Request $request)
 {
 
-    $request->user()->currentAccessToken()->delete();
+    Auth::user()->tokens()->delete();
 
     $token = $request->user()->createToken('new-token-name');
 
     return response()->json(['token' => $token->plainTextToken]);
+    
 }
 
 }
