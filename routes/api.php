@@ -2,7 +2,9 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\AuthController;
+use App\Http\Controllers\ApiAuthController;
+use App\Http\Controllers\UserController;
+use App\Http\Controllers\FileController;
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -14,13 +16,15 @@ use App\Http\Controllers\AuthController;
 |
 */
 
+Route::prefix('auth')->group(function () {
+    Route::post('/login', [ApiAuthController::class, 'login']);
+    Route::post('/register', [ApiAuthController::class, 'register']);
 
-    Route::post('/login', [AuthController::class, 'login']);
-Route::post('/register', [AuthController::class, 'register']);
-
-Route::middleware(['auth:sanctum'])->group(function(){
-    Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
-   //Route::get('/profile', [UserController::class, 'profile'])->name('profile');
+    Route::middleware(['auth:sanctum'])->group(function(){
+        Route::post('/logout', [ApiAuthController::class, 'logout'])->name('logout');
+        Route::post('/refresh-token', [ApiAuthController::class, 'refreshToken']);
+        Route::get('/profile', [UserController::class, 'profile'])->name('profile');
+        Route::post('/user/{id}/upload', [FileController::class, 'upload']);
+        Route::delete('/files/{filePath}', [FileController::class, 'delete']);
+    });
 });
-Route::middleware('auth:sanctum')->post('/refresh-token', [AuthController::class, 'refreshToken']);
-

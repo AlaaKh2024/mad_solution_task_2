@@ -18,7 +18,7 @@ class UserResource extends JsonResource
             'name' => $this->name,
             'email' => $this->email,
             'phone_number'=> $this->phone_number,
-            'certificate'=> $this->certificate,
+            'certificate'=> Storage::disk('public')->url($this->certificate),
             'image' => Storage::disk('public')->url($this->image),
         ];
     }

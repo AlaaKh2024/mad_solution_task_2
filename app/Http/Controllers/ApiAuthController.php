@@ -4,33 +4,25 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use AppEventsEmailVerificationEvent;
+use App\Http\Requests\UserRegisterRequest;
+use App\Http\Requests\LoginRequest;
 use App\Models\User;
+use App\Traits\HttpResponses;
+use Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\VerificationMail;
+use App\Http\Resources\UserResource;
 class ApiAuthController extends Controller
 {
-    
 
+    use HttpResponses;
 
-   public function register(Request $request)
+   public function register(UserRegisterRequest $request)
    {
-       $validator = Validator::make($request->all(), [
-           'email' => 'required|email|unique:users,email',
-           'phone_number' => 'required|unique:users,phone_number',
-           'username' => 'required|unique:users,username',
-           'password' => 'required|string|min:6|confirmed',
-           'profile_photo' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
-           'certificate' => 'required|mimes:pdf|max:10000',
-       ]);
 
-       if ($validator->fails()) {
-           return response()->json($validator->errors(), 400);
-       }
-
-    
        event(new EmailVerificationEvent($user, $user->verification_code));
        $user = new User;
        $user->email = $request->email;
@@ -41,18 +33,12 @@ class ApiAuthController extends Controller
        $user->certificate_path = $request->certificate->store('certificates', 'public');
        $user->verification_code = Str::random(6);
        $user->save();
-       
 
-       return response()->json(['message' => 'User registered successfully! Please check your email for verification code.']);
+        return $this->success([], 'User registered successfully! Please check your email for verification code.');
    }
-    
 
-    public function login(Request $request)
+    public function login(LoginRequest $request)
     {
-        $validated = $request->validate([
-            'email' => ['required','string','email'],
-            'password' => ['required','string', 'min:6'],
-        ]);
 
         if(!Auth::attempt($request->only('email', 'password'))){
             return response([
@@ -62,34 +48,29 @@ class ApiAuthController extends Controller
 
         $user = User::where('email',$request->email)->first();
 
-        return response([
+        return $this->success([
             'user' => new UserResource($user),
             'token' => $user->createToken('API token of '.$user->name)->plainTextToken
         ]);
     }
+
     public function logout()
     {
         Auth::user()->tokens()->delete();
-        return response([
-            'success' => true,
-            'message'=>'goodbye...'
-            
 
-        ]);
-        
+        return $this->success([], 'goodbye...');
     }
-    
 
-    public function refreshToken(Request $request)
-{
 
-    Auth::user()->tokens()->delete();
+    public function refreshToken()
+    {
 
-    $token = $request->user()->createToken('new-token-name');
+        $user = Auth::user();
+        $user->tokens()->delete();
+        $token = $user->createToken('new-token-name');
 
-    return response()->json(['token' => $token->plainTextToken]);
-    
-}
+        return response()->json(['token' => $token->plainTextToken]);
+    }
 
 }
 

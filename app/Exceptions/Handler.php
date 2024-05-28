@@ -2,7 +2,13 @@
 
 namespace App\Exceptions;
 
+use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
+use Symfony\Component\HttpFoundation\Exception\BadRequestException;
+use Symfony\Component\HttpKernel\Exception\HttpException;
+use Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Throwable;
 
 class Handler extends ExceptionHandler
@@ -44,5 +50,26 @@ class Handler extends ExceptionHandler
         $this->reportable(function (Throwable $e) {
             //
         });
+        $this->renderable(function (AuthenticationException $e,$request){
+            return response()->json(['message' =>'Unauthorized'], 401);
+        });
+        $this->renderable(function(ValidationException $e,$request){
+            return response()->json(['errors' => $e->errors()], 422);
+        });
+        $this->renderable(function(ModelNotFoundException $e,$request){
+            return response()->json(['message' =>'Record not found'], 404);
+        });
+        $this->renderable(function(NotFoundHttpException $e,$request){
+            return response()->json(['message' =>'Route not found'], 404);
+        });
+        $this->renderable(function(QueryException $e,$request){
+            if($e->getCode()==23000){
+                return response()->json(['message' =>'A unique constraint violation occured'], 422);
+            }
+            return response()->json(['message' =>'Query error'], 500);
+
+        });
+
+
     }
 }
